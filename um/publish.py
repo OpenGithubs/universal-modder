@@ -73,20 +73,33 @@ def check(mod: str, game: str | None = None) -> int:
                 except OSError:
                     pass
         for f in files:
-            sz = f.stat().st_size
+            try:
+                sz = f.stat().st_size
+            except OSError:
+                continue
             if sz < 64 or sz not in by_size:
                 continue
-            h = _sha1(f)
+            try:
+                h = _sha1(f)
+            except OSError:
+                continue
             for gp in by_size[sz]:
-                if _sha1(gp) == h:
-                    fails.append(f"game file copied verbatim: {f.relative_to(root).as_posix()}  (== {gp.relative_to(g).as_posix()})")
-                    break
+                try:
+                    if _sha1(gp) == h:
+                        fails.append(f"game file copied verbatim: {f.relative_to(root).as_posix()}  (== {gp.relative_to(g).as_posix()})")
+                        break
+                except OSError:
+                    continue
     for f in files:
         rel = f.relative_to(root).as_posix()        # same report on every OS (Windows would print src\Mod.cs)
         if f.name == ".env" or f.name.endswith(".env"):
             fails.append(f"env file (secrets?): {rel}")
-        if f.suffix.lower() in ARCHIVE_EXT and f.stat().st_size > 5 << 20:
-            warns.append(f"large engine archive ({f.stat().st_size >> 20} MB): {rel} - make sure it holds only your own assets")
+        try:
+            fsize = f.stat().st_size
+        except OSError:
+            continue
+        if f.suffix.lower() in ARCHIVE_EXT and fsize > 5 << 20:
+            warns.append(f"large engine archive ({fsize >> 20} MB): {rel} - make sure it holds only your own assets")
         if f.suffix.lower() in TEXT_EXT or f.name in (".env",):
             try:
                 txt = f.read_text(errors="replace")
