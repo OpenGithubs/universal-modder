@@ -722,6 +722,14 @@ def test_ps_exe_falls_back_to_full_path(tmp_path, monkeypatch):
     assert common.ps_exe() == "/on/path/powershell"
 
 
+def test_run_timeout_exits_with_a_message(capsys):
+    # a command that outlives timeout= ends in die(), like a failed one, not a TimeoutExpired traceback
+    from um import common
+    with pytest.raises(SystemExit):
+        common.run([sys.executable, "-c", "import time; time.sleep(10)"], timeout=0.2)
+    assert "timed out after 0.2s" in capsys.readouterr().err
+
+
 # --------------------------------------------------------------------------- backup
 
 @pytest.fixture
