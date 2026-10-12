@@ -41,7 +41,7 @@ def _vdf(text: str) -> dict:
         elif key is None:
             key = s
         else:
-            cur[key] = s.replace("\\\\", "\\")
+            cur[key] = s.replace("\\\\", "\\").replace('\\"', '"')
             key = None
     return cur
 
